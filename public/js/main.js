@@ -23,7 +23,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Variables globales
 let heatLayer = null;
 let originalData = [];
-let messageMarkers = []; // Para almacenar los marcadores con números
+let markerClusterGroup = null; // Para el grupo de marcadores agrupables
 let recentMessages = [];
 
 // Configuración de la capa de calor con los umbrales específicos
@@ -95,8 +95,8 @@ async function loadData() {
         // Mostrar mensajes recientes
         displayRecentMessages();
         
-        // Añadir etiquetas con números a las áreas sombreadas
-        addNumberLabels();
+        // Añadir etiquetas con números a las áreas sombreadas y habilitar agrupación
+        addNumberLabelsWithClustering();
         
     } catch (error) {
         console.error('Error al cargar los datos:', error);
@@ -153,34 +153,69 @@ function updateHeatmap() {
     console.log('Capa de calor creada y añadida al mapa');
 }
 
-// Función para añadir etiquetas con números a las áreas sombreadas
-function addNumberLabels() {
-    // Limpiar marcadores anteriores
-    messageMarkers.forEach(marker => map.removeLayer(marker));
-    messageMarkers = [];
+// Función para añadir etiquetas con números a las áreas sombreadas con agrupación
+function addNumberLabelsWithClustering() {
+    // Eliminar la capa de agrupación anterior si existe
+    if (markerClusterGroup) {
+        map.removeLayer(markerClusterGroup);
+    }
     
-    // Añadir un marcador con el conteo para cada punto de datos
+    // Crear un nuevo grupo de agrupación
+    markerClusterGroup = L.markerClusterGroup({
+        // Personalizar el ícono para las agrupaciones
+        iconCreateFunction: function(cluster) {
+            // Calcular la suma total de los mensajes en este grupo
+            let totalCount = 0;
+            const markers = cluster.getAllChildMarkers();
+            
+            markers.forEach(marker => {
+                totalCount += marker.options.count;
+            });
+            
+            // Devolver un icono personalizado con el conteo total
+            return L.divIcon({
+                html: `<div class="message-count">${totalCount}</div>`,
+                className: 'message-number-icon',
+                iconSize: [30, 20],
+                iconAnchor: [15, 10]
+            });
+        },
+        // Opciones de agrupación
+        disableClusteringAtZoom: 12, // No agrupar cuando el zoom es mayor que 12
+        spiderfyOnMaxZoom: false,    // No expandir marcadores al hacer clic en un grupo
+        showCoverageOnHover: false,  // No mostrar área de cobertura al pasar el mouse
+        zoomToBoundsOnClick: true,   // Hacer zoom al área del grupo al hacer clic
+        maxClusterRadius: 80,        // Radio máximo de agrupación (ajustar según necesidad)
+        animate: true                // Animar la transición
+    });
+    
+    // Añadir marcadores individuales al grupo de agrupación
     originalData.forEach(point => {
         if (!point.lat || !point.lng) return;
         
-        // Crear un icono personalizado solo con el número (sin círculo)
+        // Crear un icono personalizado solo con el número
         const numberIcon = L.divIcon({
-            className: 'message-number-icon',
             html: `<div class="message-count">${point.count}</div>`,
+            className: 'message-number-icon',
             iconSize: [30, 20],
             iconAnchor: [15, 10]
         });
         
-        // Crear el marcador y añadirlo al mapa
+        // Crear el marcador con el conteo almacenado como opción
         const marker = L.marker([point.lat, point.lng], {
             icon: numberIcon,
-            interactive: false  // Deshabilitar interacciones para que no interfiera con el mapa base
-        }).addTo(map);
+            count: point.count,  // Almacenar el conteo como propiedad del marcador
+            interactive: false   // Deshabilitar interacciones
+        });
         
-        messageMarkers.push(marker);
+        // Añadir el marcador al grupo de agrupación
+        markerClusterGroup.addLayer(marker);
     });
     
-    console.log(`Añadidos ${messageMarkers.length} marcadores con conteos de mensajes`);
+    // Añadir el grupo de agrupación al mapa
+    map.addLayer(markerClusterGroup);
+    
+    console.log(`Añadidos ${originalData.length} marcadores con agrupación dinámica`);
 }
 
 // Función para actualizar las estadísticas

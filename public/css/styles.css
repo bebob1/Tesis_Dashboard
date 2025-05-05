@@ -135,6 +135,23 @@ body, html {
   text-shadow: 0px 0px 2px #000000, 0px 0px 2px #000000;
 }
 
+/* Ocultar estilos por defecto de los clusters de MarkerCluster */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: transparent !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: transparent !important;
+}
+
+.marker-cluster span {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {
