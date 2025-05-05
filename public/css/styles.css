@@ -1,0 +1,171 @@
+/* Estilos generales */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+/* Encabezado */
+#header {
+  background-color: #1a3c6e;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+#header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+/* Contenedor principal */
+.container {
+  display: flex;
+  height: calc(100% - 60px);
+}
+/* Mapa */
+#map {
+  flex: 1;
+  height: 100%;
+  z-index: 1;
+}
+/* Sidebar / Panel lateral */
+.sidebar {
+  width: 300px;
+  background-color: #f5f5f5;
+  padding: 15px;
+  overflow-y: auto;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+/* Secciones dentro del sidebar */
+.filter-section, .stats-box, .legend {
+  margin-bottom: 20px;
+}
+.filter-section h3, .stats-box h3, .legend h3 {
+  color: #1a3c6e;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 8px;
+  margin-top: 0;
+}
+/* Controles de filtrado */
+.filter-control {
+  margin-bottom: 15px;
+}
+.filter-control label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+#min-score {
+  width: 100%;
+  margin-bottom: 5px;
+}
+#min-score-value {
+  font-weight: bold;
+  color: #1a3c6e;
+}
+/* Botón de aplicar filtros */
+#apply-filters {
+  background-color: #1a3c6e;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+#apply-filters:hover {
+  background-color: #15305a;
+}
+/* Caja de estadísticas */
+.stats-box {
+  background: white;
+  border-radius: 5px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+#total-messages {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+#recent-messages h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #444;
+}
+#recent-messages-list {
+  margin-left: 0;
+  padding-left: 0;
+  list-style-type: none;
+}
+#recent-messages-list li {
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: #f9f9f9;
+  border-left: 3px solid #1a3c6e;
+  border-radius: 3px;
+}
+.message-content {
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+.message-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #666;
+}
+.message-score {
+  color: #d9534f;
+  font-weight: bold;
+}
+/* Leyenda */
+.legend {
+  background: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.legend-color {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+/* Actualizar colores de la leyenda para que coincidan con el mapa */
+.legend-item:nth-child(1) .legend-color {
+  background: rgba(255, 0, 0, 0.8); /* Rojo - Alta concentración (10+ mensajes) */
+}
+.legend-item:nth-child(2) .legend-color {
+  background: rgba(255, 165, 0, 0.8); /* Naranja - Media concentración (5 mensajes) */
+}
+.legend-item:nth-child(3) .legend-color {
+  background: rgba(255, 255, 0, 0.8); /* Amarillo - Baja concentración (1 mensaje) */
+}
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+      flex-direction: column;
+  }
+ 
+  #map {
+      height: 60%;
+  }
+ 
+  .sidebar {
+      width: auto;
+      height: 40%;
+  }
+}

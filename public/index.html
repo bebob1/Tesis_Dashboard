@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Calor de Mensajes Fraudulentos en Colombia</title>
+   
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+   
+    <!-- Heatmap.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.min.css" />
+   
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+    <div id="header">
+        <h1>Mapa de Calor de Mensajes Fraudulentos en Colombia</h1>
+    </div>
+   
+    <div class="container">
+        <div id="map"></div>
+       
+        <div class="sidebar">
+            <div class="filter-section">
+                <h3>Filtros</h3>
+                <div class="filter-control">
+                    <label for="min-score">Puntaje mínimo de detección:</label>
+                    <input type="range" id="min-score" min="0" max="100" value="70" step="5">
+                    <span id="min-score-value">70</span>
+                </div>
+                <div class="filter-control">
+                    <button id="apply-filters">Aplicar filtros</button>
+                </div>
+            </div>
+           
+            <div class="stats-box">
+                <h3>Estadísticas</h3>
+                <div id="total-messages">Total de mensajes: Cargando...</div>
+                <div id="recent-messages">
+                    <h4>Últimos mensajes:</h4>
+                    <ul id="recent-messages-list"></ul>
+                </div>
+            </div>
+           
+            <div class="legend">
+                <h3>Leyenda</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(255, 0, 0, 0.8);"></div>
+                    <div>Alta concentración (100+ mensajes)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(255, 165, 0, 0.8);"></div>
+                    <div>Media concentración (50 mensajes)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(255, 255, 0, 0.8);"></div>
+                    <div>Baja concentración (10 mensajes)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+   
+    <!-- Heatmap.js para Leaflet -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.min.js"></script>
+   
+    <!-- Script principal -->
+    <script src="js/main.js"></script>
+</body>
+</html>
