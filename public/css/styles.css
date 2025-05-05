@@ -40,46 +40,14 @@ body, html {
   z-index: 2;
 }
 /* Secciones dentro del sidebar */
-.filter-section, .stats-box, .legend {
+.stats-box, .legend {
   margin-bottom: 20px;
 }
-.filter-section h3, .stats-box h3, .legend h3 {
+.stats-box h3, .legend h3 {
   color: #1a3c6e;
   border-bottom: 2px solid #ddd;
   padding-bottom: 8px;
   margin-top: 0;
-}
-/* Controles de filtrado */
-.filter-control {
-  margin-bottom: 15px;
-}
-.filter-control label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-#min-score {
-  width: 100%;
-  margin-bottom: 5px;
-}
-#min-score-value {
-  font-weight: bold;
-  color: #1a3c6e;
-}
-/* Botón de aplicar filtros */
-#apply-filters {
-  background-color: #1a3c6e;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  width: 100%;
-  transition: background-color 0.3s;
-}
-#apply-filters:hover {
-  background-color: #15305a;
 }
 /* Caja de estadísticas */
 .stats-box {
@@ -146,14 +114,35 @@ body, html {
 }
 /* Actualizar colores de la leyenda para que coincidan con el mapa */
 .legend-item:nth-child(1) .legend-color {
-  background: rgba(255, 0, 0, 0.8); /* Rojo - Alta concentración (10+ mensajes) */
+  background: rgba(255, 0, 0, 0.8); /* Rojo - Alta concentración (100+ mensajes) */
 }
 .legend-item:nth-child(2) .legend-color {
-  background: rgba(255, 165, 0, 0.8); /* Naranja - Media concentración (5 mensajes) */
+  background: rgba(255, 165, 0, 0.8); /* Naranja - Media concentración (50 mensajes) */
 }
 .legend-item:nth-child(3) .legend-color {
-  background: rgba(255, 255, 0, 0.8); /* Amarillo - Baja concentración (1 mensaje) */
+  background: rgba(255, 255, 0, 0.8); /* Amarillo - Baja concentración (10 mensajes) */
 }
+
+/* Estilos para los marcadores con números de mensajes */
+.message-number-icon {
+  background: transparent;
+  border: none;
+}
+.message-count {
+  background-color: rgba(26, 60, 110, 0.8);
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 12px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  border: 2px solid white;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

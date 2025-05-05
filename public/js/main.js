@@ -23,7 +23,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Variables globales
 let heatLayer = null;
 let originalData = [];
-let filteredData = [];
+let messageMarkers = []; // Para almacenar los marcadores con números
 let recentMessages = [];
 
 // Configuración de la capa de calor con los umbrales específicos
@@ -86,8 +86,8 @@ async function loadData() {
         recentMessages = await recentResponse.json();
         console.log(`Recibidos ${recentMessages.length} mensajes recientes`);
         
-        // Aplicar filtros iniciales
-        applyFilters();
+        // Actualizar el mapa de calor sin filtros
+        updateHeatmap();
         
         // Actualizar estadísticas
         updateStats();
@@ -95,34 +95,13 @@ async function loadData() {
         // Mostrar mensajes recientes
         displayRecentMessages();
         
+        // Añadir etiquetas con números a las áreas sombreadas
+        addNumberLabels();
+        
     } catch (error) {
         console.error('Error al cargar los datos:', error);
         alert('Error al cargar los datos del servidor. Por favor, intente de nuevo más tarde.');
     }
-}
-
-// Función para aplicar filtros
-function applyFilters() {
-    const minScore = parseInt(document.getElementById('min-score').value);
-    
-    if (minScore === 0) {
-        // Si el filtro es 0, mostramos todos los puntos
-        filteredData = [...originalData];
-    } else {
-        // Filtrar datos según los criterios
-        filteredData = originalData.filter(point => point.score >= minScore);
-    }
-    
-    // Actualizar el mapa de calor
-    updateHeatmap();
-    
-    // Actualizar las estadísticas
-    updateStats();
-    
-    // Actualizar el valor mostrado del filtro
-    document.getElementById('min-score-value').textContent = minScore;
-    
-    console.log(`Filtro aplicado: ${minScore}. Mostrando ${filteredData.length} de ${originalData.length} puntos.`);
 }
 
 // Función para actualizar el mapa de calor
@@ -132,16 +111,16 @@ function updateHeatmap() {
         map.removeLayer(heatLayer);
     }
     
-    // Verificar si hay datos filtrados
-    if (filteredData.length === 0) {
-        console.warn('No hay datos para mostrar en el mapa de calor después de aplicar los filtros');
+    // Verificar si hay datos
+    if (originalData.length === 0) {
+        console.warn('No hay datos para mostrar en el mapa de calor');
         return;
     }
     
-    console.log(`Creando mapa de calor con ${filteredData.length} puntos`);
+    console.log(`Creando mapa de calor con ${originalData.length} puntos`);
     
     // Preparar los datos para la capa de calor
-    const heatData = filteredData.map(point => {
+    const heatData = originalData.map(point => {
         // Verificación adicional de los datos
         if (!point.lat || !point.lng) {
             console.warn('Punto con coordenadas inválidas:', point);
@@ -163,7 +142,7 @@ function updateHeatmap() {
         return [point.lat, point.lng, normalizedWeight];
     }).filter(point => point !== null); // Eliminar puntos inválidos
     
-    // Verificar si hay datos válidos después del filtrado
+    // Verificar si hay datos válidos
     if (heatData.length === 0) {
         console.warn('No hay datos válidos para mostrar en el mapa de calor');
         return;
@@ -172,6 +151,36 @@ function updateHeatmap() {
     // Crear y añadir la nueva capa de calor
     heatLayer = L.heatLayer(heatData, heatmapConfig).addTo(map);
     console.log('Capa de calor creada y añadida al mapa');
+}
+
+// Función para añadir etiquetas con números a las áreas sombreadas
+function addNumberLabels() {
+    // Limpiar marcadores anteriores
+    messageMarkers.forEach(marker => map.removeLayer(marker));
+    messageMarkers = [];
+    
+    // Añadir un marcador con el conteo para cada punto de datos
+    originalData.forEach(point => {
+        if (!point.lat || !point.lng) return;
+        
+        // Crear un icono personalizado con el número de mensajes
+        const numberIcon = L.divIcon({
+            className: 'message-number-icon',
+            html: `<div class="message-count">${point.count}</div>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+        
+        // Crear el marcador y añadirlo al mapa
+        const marker = L.marker([point.lat, point.lng], {
+            icon: numberIcon,
+            interactive: false  // Deshabilitar interacciones para que no interfiera con el mapa base
+        }).addTo(map);
+        
+        messageMarkers.push(marker);
+    });
+    
+    console.log(`Añadidos ${messageMarkers.length} marcadores con conteos de mensajes`);
 }
 
 // Función para actualizar las estadísticas
@@ -183,15 +192,7 @@ function updateStats() {
     if (originalData.length < totalMessagesCount) {
         document.getElementById('total-messages').textContent += ` (agrupados en ${originalData.length} puntos)`;
     }
-    
-    // Si hay un filtro aplicado, podemos mostrar cuántos pasan el filtro
-    if (filteredData.length !== originalData.length) {
-        const filteredTotal = filteredData.reduce((sum, point) => sum + point.count, 0);
-        const percentageVisible = Math.round((filteredTotal / totalMessagesCount) * 100);
-        document.getElementById('total-messages').textContent += ` - Mostrando ${percentageVisible}% con el filtro actual`;
-    }
 }
-
 
 // Función para mostrar los mensajes recientes
 function displayRecentMessages() {
@@ -242,13 +243,6 @@ function displayRecentMessages() {
         recentMessagesList.appendChild(li);
     });
 }
-
-// Event listeners
-document.getElementById('apply-filters').addEventListener('click', applyFilters);
-
-document.getElementById('min-score').addEventListener('input', function() {
-    document.getElementById('min-score-value').textContent = this.value;
-});
 
 // Cargar datos al iniciar
 window.addEventListener('load', loadData);
