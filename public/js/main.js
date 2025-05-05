@@ -28,9 +28,9 @@ let recentMessages = [];
 
 // Configuración de la capa de calor con los umbrales específicos
 const heatmapConfig = {
-    radius: 25,
-    blur: 15,
-    maxZoom: 10,
+    radius: 50,
+    blur: 30,
+    maxZoom: 0,
     // Valores actualizados según nuevos requisitos
     max: 100, // 100 mensajes es el máximo para el gradiente completo
     // Nueva configuración del gradiente:
@@ -163,12 +163,12 @@ function addNumberLabels() {
     originalData.forEach(point => {
         if (!point.lat || !point.lng) return;
         
-        // Crear un icono personalizado con el número de mensajes
+        // Crear un icono personalizado solo con el número (sin círculo)
         const numberIcon = L.divIcon({
             className: 'message-number-icon',
             html: `<div class="message-count">${point.count}</div>`,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20]
+            iconSize: [30, 20],
+            iconAnchor: [15, 10]
         });
         
         // Crear el marcador y añadirlo al mapa
