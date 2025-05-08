@@ -114,13 +114,13 @@ body, html {
 }
 /* Actualizar colores de la leyenda para que coincidan con el mapa */
 .legend-item:nth-child(1) .legend-color {
-  background: rgba(255, 0, 0, 0.8); /* Rojo - Alta concentración (100+ mensajes) */
+  background: rgba(255, 0, 0, 0.9); /* Rojo - Alta concentración (100+ mensajes) */
 }
 .legend-item:nth-child(2) .legend-color {
-  background: rgba(255, 165, 0, 0.8); /* Naranja - Media concentración (50 mensajes) */
+  background: rgba(255, 165, 0, 0.9); /* Naranja - Media concentración (50 mensajes) */
 }
 .legend-item:nth-child(3) .legend-color {
-  background: rgba(255, 255, 0, 0.8); /* Amarillo - Baja concentración (10 mensajes) */
+  background: rgba(255, 255, 0, 0.9); /* Amarillo - Baja concentración (10 mensajes) */
 }
 
 /* Estilos para los marcadores con números de mensajes */
