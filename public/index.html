@@ -15,8 +15,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/statsPanel.css" />
 </head>
 <body>
     <div id="header">
@@ -53,6 +57,62 @@
             </div>
         </div>
     </div>
+
+    <!-- Botón para abrir el panel de estadísticas -->
+    <button id="stats-toggle-btn" class="stats-toggle-btn">
+        <i class="fas fa-chart-bar"></i> Ver Estadísticas
+    </button>
+
+    <!-- Panel de estadísticas -->
+    <div id="stats-panel" class="stats-panel closed">
+        <div class="stats-header">
+            <h2>Análisis Detallado</h2>
+            <button id="close-stats-btn" class="close-btn">×</button>
+        </div>
+        
+        <div id="stats-loading" class="loading-indicator">
+            <p>Cargando datos estadísticos...</p>
+        </div>
+        
+        <div id="stats-content" class="stats-content" style="display: none;">
+            <!-- Resumen de estadísticas generales -->
+            <div id="general-stats" class="general-stats">
+                <!-- Se llenará dinámicamente -->
+            </div>
+            
+            <!-- Gráfico de mensajes en el tiempo -->
+            <div class="chart-container">
+                <h3>Mensajes en el Tiempo</h3>
+                <div class="chart-wrapper">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de mensajes por remitente -->
+            <div class="chart-container">
+                <h3>Mensajes por Remitente (Top 10)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="senderChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de mensajes por región -->
+            <div class="chart-container">
+                <h3>Mensajes por Región</h3>
+                <div class="chart-wrapper">
+                    <canvas id="regionChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de distribución de puntajes -->
+            <div class="chart-container">
+                <h3>Distribución de Puntajes</h3>
+                <div class="chart-wrapper">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
    
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -62,8 +122,14 @@
     
     <!-- MarkerCluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    
     <!-- Script principal -->
     <script src="js/main.js"></script>
+    
+    <!-- Script para el panel de estadísticas -->
+    <script src="js/statsPanel.js"></script>
 </body>
 </html>

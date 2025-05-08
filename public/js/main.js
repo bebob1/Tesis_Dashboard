@@ -38,6 +38,7 @@ const heatmapConfig = {
     // 50 mensajes = naranja (50% del máximo)
     // 100+ mensajes = rojo (100% del máximo)
     gradient: {
+        0.0: 'rgba(255, 255, 0, 0.9)',  // Comenzar con amarillo
         0.1: 'rgba(255, 255, 0, 0.9)',  // 10 mensajes - amarillo intenso
         0.5: 'rgba(255, 165, 0, 0.9)',  // 50 mensajes - naranja intenso
         1.0: 'rgba(255, 0, 0, 0.9)'     // 100 mensajes - rojo intenso
