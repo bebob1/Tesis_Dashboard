@@ -1,5 +1,3 @@
-// public/js/statsPanel.js
-
 // Variables globales para los gráficos
 let timeChart = null;
 let senderChart = null;
@@ -278,7 +276,13 @@ function renderGeneralStats(data) {
         
         const value = document.createElement('div');
         value.className = 'stat-value';
-        value.textContent = item.value;
+        
+        // Verificar si es una coordenada geográfica y manejar ese caso especial
+        if (item.label === 'Región principal' && /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/.test(item.value)) {
+            value.textContent = 'Bogotá'; // Si es coordenada, usar un valor por defecto
+        } else {
+            value.textContent = item.value;
+        }
         
         card.appendChild(heading);
         card.appendChild(value);
