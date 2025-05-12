@@ -7,19 +7,73 @@ let scoreChart = null;
 // Variable para controlar el estado del panel
 let isStatsPanelOpen = false;
 
-// Función para formatear mes-año
+// Caché de coordenadas a nombres de ciudades (para evitar solicitudes repetidas)
+const locationCache = {};
+
+/**
+ * Función para formatear mes-año
+ * @param {string} dateString - Fecha en formato 'YYYY-MM'
+ * @returns {string} Fecha formateada como 'Mes Año'
+ */
 function formatMonthYear(dateString) {
     const [year, month] = dateString.split('-');
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${monthNames[parseInt(month) - 1]} ${year}`;
 }
 
-// Función para cargar todos los datos estadísticos
+/**
+ * Función para convertir coordenadas a nombres de ciudades
+ * Utiliza la API que conecta con locationService.js en el backend
+ * @param {string} locationStr - String con formato "latitud,longitud"
+ * @returns {Promise<string>} Nombre de la ciudad/región
+ */
+async function getLocationName(locationStr) {
+    // Verificar si ya está en caché
+    if (locationCache[locationStr]) {
+        return locationCache[locationStr];
+    }
+
+    // Verificar si es un formato de coordenadas válido
+    if (!locationStr || !locationStr.includes(',')) {
+        return 'Ubicación desconocida';
+    }
+
+    try {
+        // Extraer las coordenadas
+        const [lat, lng] = locationStr.split(',').map(coord => parseFloat(coord.trim()));
+        
+        // Validar coordenadas
+        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return 'Coordenadas inválidas';
+        }
+
+        // Hacer solicitud al servidor para obtener el nombre de la ciudad
+        // Esta API utiliza locationService.js en el backend
+        const response = await fetch(`/api/location-name?lat=${lat}&lng=${lng}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Guardar en caché para reducir solicitudes repetidas
+            locationCache[locationStr] = data.cityName;
+            return data.cityName;
+        } else {
+            console.error('Error al obtener nombre de ubicación:', await response.text());
+            return 'Error al obtener ubicación';
+        }
+    } catch (error) {
+        console.error('Error al procesar coordenadas:', error);
+        return 'Error de procesamiento';
+    }
+}
+
+/**
+ * Función para cargar todos los datos estadísticos
+ */
 async function loadAllStatsData() {
     showStatsLoading(true);
     
     try {
-        // Cargar datos para todos los gráficos en paralelo
+        // Cargar datos para todos los gráficos en paralelo para mejorar rendimiento
         const [timeResponse, senderResponse, regionResponse, scoreResponse, generalResponse] = await Promise.all([
             fetch('/api/stats/messages-by-time'),
             fetch('/api/stats/messages-by-sender'),
@@ -81,6 +135,7 @@ async function loadAllStatsData() {
         // Procesar datos de región
         if (regionResponse.ok) {
             const data = await regionResponse.json();
+            // Los datos ya vienen procesados por el locationService desde el backend
             const regionData = {
                 labels: data.map(item => item.region),
                 datasets: [{
@@ -131,17 +186,23 @@ async function loadAllStatsData() {
     }
 }
 
-// Función para mostrar/ocultar el indicador de carga
+/**
+ * Función para mostrar/ocultar el indicador de carga
+ * @param {boolean} show - Indica si se debe mostrar el indicador de carga
+ */
 function showStatsLoading(show) {
     document.getElementById('stats-loading').style.display = show ? 'flex' : 'none';
     document.getElementById('stats-content').style.display = show ? 'none' : 'block';
 }
 
-// Función para renderizar el gráfico de tiempo
+/**
+ * Función para renderizar el gráfico de tiempo
+ * @param {Object} data - Datos para el gráfico
+ */
 function renderTimeChart(data) {
     const ctx = document.getElementById('timeChart').getContext('2d');
     
-    // Destruir el gráfico anterior si existe
+    // Destruir el gráfico anterior si existe para evitar duplicados
     if (timeChart) {
         timeChart.destroy();
     }
@@ -176,7 +237,10 @@ function renderTimeChart(data) {
     });
 }
 
-// Función para renderizar el gráfico de remitentes
+/**
+ * Función para renderizar el gráfico de remitentes
+ * @param {Object} data - Datos para el gráfico
+ */
 function renderSenderChart(data) {
     const ctx = document.getElementById('senderChart').getContext('2d');
     
@@ -203,7 +267,10 @@ function renderSenderChart(data) {
     });
 }
 
-// Función para renderizar el gráfico de regiones
+/**
+ * Función para renderizar el gráfico de regiones
+ * @param {Object} data - Datos para el gráfico
+ */
 function renderRegionChart(data) {
     const ctx = document.getElementById('regionChart').getContext('2d');
     
@@ -227,7 +294,10 @@ function renderRegionChart(data) {
     });
 }
 
-// Función para renderizar el gráfico de distribución de puntajes
+/**
+ * Función para renderizar el gráfico de distribución de puntajes
+ * @param {Object} data - Datos para el gráfico
+ */
 function renderScoreChart(data) {
     const ctx = document.getElementById('scoreChart').getContext('2d');
     
@@ -254,7 +324,10 @@ function renderScoreChart(data) {
     });
 }
 
-// Función para renderizar las estadísticas generales
+/**
+ * Función para renderizar las estadísticas generales
+ * @param {Object} data - Datos de estadísticas generales
+ */
 function renderGeneralStats(data) {
     const container = document.getElementById('general-stats');
     container.innerHTML = '';
@@ -276,13 +349,7 @@ function renderGeneralStats(data) {
         
         const value = document.createElement('div');
         value.className = 'stat-value';
-        
-        // Verificar si es una coordenada geográfica y manejar ese caso especial
-        if (item.label === 'Región principal' && /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/.test(item.value)) {
-            value.textContent = 'Bogotá'; // Si es coordenada, usar un valor por defecto
-        } else {
-            value.textContent = item.value;
-        }
+        value.textContent = item.value;
         
         card.appendChild(heading);
         card.appendChild(value);
@@ -290,7 +357,73 @@ function renderGeneralStats(data) {
     });
 }
 
-// Función para mostrar/ocultar el panel de estadísticas
+/**
+ * Función para cargar y mostrar mensajes recientes con nombres de ciudades
+ * Aprovecha la propiedad city que viene desde el backend (locationService)
+ */
+async function loadRecentMessages() {
+    try {
+        const response = await fetch('/api/recent-messages');
+        if (response.ok) {
+            const messages = await response.json();
+            const container = document.getElementById('recent-messages-list');
+            
+            if (!container) {
+                console.error('El contenedor de mensajes recientes no existe');
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Procesar cada mensaje
+            for (const msg of messages) {
+                let locationName = 'Ubicación desconocida';
+                
+                // Usar el nombre de ciudad si ya está en el objeto (viene del backend usando locationService)
+                if (msg.city && msg.city !== 'Desconocido' && msg.city !== 'Error de geocodificación') {
+                    locationName = msg.city;
+                } else if (msg.location) {
+                    // Si no tenemos ciudad del backend, intentamos obtenerla con nuestra función local
+                    locationName = await getLocationName(msg.location);
+                }
+                
+                // Crear elemento para el mensaje
+                const msgItem = document.createElement('div');
+                msgItem.className = 'message-item';
+                
+                // Formatear la fecha para mejor legibilidad
+                const date = new Date(msg.received_at);
+                const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                // Limitar el texto del mensaje a 100 caracteres para mejorar visualización
+                const truncatedMessage = msg.message_body.length > 100 
+                    ? msg.message_body.substring(0, 100) + '...' 
+                    : msg.message_body;
+                
+                // Crear el contenido HTML
+                msgItem.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-date">${formattedDate}</span>
+                        <span class="message-score">Score: ${parseFloat(msg.detection_score).toFixed(1)}</span>
+                    </div>
+                    <div class="message-body">${truncatedMessage}</div>
+                    <div class="message-location">Ubicación: ${locationName}</div>
+                `;
+                
+                // Añadir al contenedor
+                container.appendChild(msgItem);
+            }
+        } else {
+            console.error('Error al cargar mensajes recientes:', await response.text());
+        }
+    } catch (error) {
+        console.error('Error al procesar mensajes recientes:', error);
+    }
+}
+
+/**
+ * Función para mostrar/ocultar el panel de estadísticas
+ */
 function toggleStatsPanel() {
     const panel = document.getElementById('stats-panel');
     isStatsPanelOpen = !isStatsPanelOpen;
@@ -299,6 +432,7 @@ function toggleStatsPanel() {
         panel.classList.remove('closed');
         panel.classList.add('open');
         loadAllStatsData(); // Cargar datos cuando se abre el panel
+        loadRecentMessages(); // Cargar mensajes recientes
     } else {
         panel.classList.remove('open');
         panel.classList.add('closed');
@@ -308,6 +442,14 @@ function toggleStatsPanel() {
 // Inicializar eventos cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
     // Configurar el botón de abrir/cerrar panel
-    document.getElementById('stats-toggle-btn').addEventListener('click', toggleStatsPanel);
-    document.getElementById('close-stats-btn').addEventListener('click', toggleStatsPanel);
+    const statsToggleBtn = document.getElementById('stats-toggle-btn');
+    const closeStatsBtn = document.getElementById('close-stats-btn');
+    
+    if (statsToggleBtn) {
+        statsToggleBtn.addEventListener('click', toggleStatsPanel);
+    }
+    
+    if (closeStatsBtn) {
+        closeStatsBtn.addEventListener('click', toggleStatsPanel);
+    }
 });

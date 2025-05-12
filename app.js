@@ -3,10 +3,14 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path');
 const dotenv = require('dotenv');
+// Importar el nuevo servicio de ubicaciones
+const locationService = require('./src/utils/locationService');
+
 // Cargar variables de entorno
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
+
 // Configuración de conexión a la base de datos
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
@@ -14,12 +18,15 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'dashboard'
 };
+
 // Middleware para servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
+
 // Ruta principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
 // API para obtener los datos de mensajes fraudulentos para el mapa de calor
 app.get('/api/fraud-messages', async (req, res) => {
   try {
@@ -124,10 +131,24 @@ app.get('/api/recent-messages', async (req, res) => {
         received_at DESC
       LIMIT 5
     `);
+    
+    // Enriquecer cada mensaje con el nombre de la ciudad utilizando el nuevo servicio
+    const enrichedRows = await Promise.all(rows.map(async (row) => {
+      if (row.location && row.location.includes(',')) {
+        try {
+          const cityName = await locationService.getCityFromLocationString(row.location);
+          return { ...row, city: cityName };
+        } catch (error) {
+          console.error(`Error al resolver ubicación para mensaje ID ${row.id}:`, error);
+          return { ...row, city: 'Error de geocodificación' };
+        }
+      }
+      return { ...row, city: 'Desconocido' };
+    }));
    
     await connection.end();
    
-    res.json(rows);
+    res.json(enrichedRows);
   } catch (error) {
     console.error('Error al obtener mensajes recientes:', error);
     res.status(500).json({ error: 'Error al obtener los mensajes recientes' });
@@ -231,13 +252,12 @@ app.get('/api/stats/messages-by-sender', async (req, res) => {
   }
 });
 
-// API para obtener estadísticas de mensajes por región
-// API para obtener estadísticas de mensajes por región (versión corregida)
+// API para obtener estadísticas de mensajes por región usando el nuevo servicio de ubicaciones
 app.get('/api/stats/messages-by-region', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // Obtenemos los datos directamente de la base de datos sin manipulación previa
+    // Obtenemos los datos de la base de datos
     const [rows] = await connection.execute(`
       SELECT 
         location,
@@ -251,86 +271,14 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
         location
     `);
     
-    // Procesamos cada ubicación para determinar su ciudad/región de manera más precisa
-    const regionData = {};
-    
-    // Definir coordenadas de referencia para ciudades colombianas
-    const cityCoordinates = [
-      { name: 'Bogotá', lat: 4.6097, lng: -74.0817, radius: 0.15 },
-      { name: 'Medellín', lat: 6.2476, lng: -75.5658, radius: 0.15 },
-      { name: 'Cali', lat: 3.4516, lng: -76.5320, radius: 0.15 },
-      { name: 'Barranquilla', lat: 10.9639, lng: -74.7964, radius: 0.15 },
-      { name: 'Cartagena', lat: 10.3932, lng: -75.4832, radius: 0.15 },
-      { name: 'Bucaramanga', lat: 7.1254, lng: -73.1198, radius: 0.15 },
-      { name: 'Pereira', lat: 4.8133, lng: -75.6961, radius: 0.15 },
-      { name: 'Santa Marta', lat: 11.2404, lng: -74.2031, radius: 0.15 },
-      { name: 'Soacha', lat: 4.5785, lng: -74.2168, radius: 0.05 },
-      // Mantener el resto de las ciudades pero con radios más pequeños y precisos
-      // ...
-    ];
-    
-    // Función para calcular la distancia entre dos puntos usando la fórmula de Haversine
-    // Esta es más precisa para coordenadas geográficas que la aproximación euclidiana
-    const calculateDistance = (lat1, lng1, lat2, lng2) => {
-      // Convertir grados a radianes
-      const toRad = (value) => value * Math.PI / 180;
-      const R = 6371; // Radio de la Tierra en km
-      
-      const dLat = toRad(lat2 - lat1);
-      const dLng = toRad(lng2 - lng1);
-      
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-        Math.sin(dLng/2) * Math.sin(dLng/2);
-      
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c; // Distancia en kilómetros
-    };
-    
-    // Procesar cada ubicación
-    rows.forEach(row => {
+    // Procesamos cada ubicación utilizando el nuevo servicio de ubicaciones
+    const regionDataPromises = rows.map(async (row) => {
       let regionName = 'Otra ubicación';
       
       if (row.location && row.location.includes(',')) {
         try {
-          // Extraer coordenadas
-          const [lat, lng] = row.location.split(',').map(coord => parseFloat(coord.trim()));
-          
-          if (!isNaN(lat) && !isNaN(lng)) {
-            // Verificar si hay una coincidencia exacta para coordenadas conocidas
-            // Esto sirve para corregir errores específicos como el de Soacha
-            if (Math.abs(lat - 4.5785) < 0.001 && Math.abs(lng - (-74.2168)) < 0.001) {
-              regionName = 'Soacha';
-            } 
-            // Comprobación específica para el punto que aparece como Soacha pero no lo es
-            else if (Math.abs(lat - 40) < 0.1) {
-              regionName = 'Otra ubicación'; // O el nombre correcto si se conoce
-            }
-            else {
-              // Buscar la ciudad más cercana usando distancia Haversine
-              let closestCity = null;
-              let minDistance = Number.MAX_VALUE;
-              
-              cityCoordinates.forEach(city => {
-                const distance = calculateDistance(lat, lng, city.lat, city.lng);
-                // Consideramos un radio más estricto (en kilómetros)
-                const radiusKm = city.radius * 111; // Aproximadamente 111km por grado
-                if (distance < minDistance && distance <= radiusKm) {
-                  minDistance = distance;
-                  closestCity = city;
-                }
-              });
-              
-              // Si encontramos una ciudad cercana, usamos su nombre
-              if (closestCity) {
-                regionName = closestCity.name;
-              } else {
-                // Si no encontramos ninguna ciudad conocida, podría ser una región diferente
-                regionName = `Coordenada ${lat.toFixed(2)}, ${lng.toFixed(2)}`;
-              }
-            }
-          }
+          // Usar el nuevo servicio para obtener el nombre de la ciudad
+          regionName = await locationService.getCityFromLocationString(row.location);
         } catch (e) {
           console.warn(`Error procesando ubicación: ${row.location}`, e);
         }
@@ -339,16 +287,28 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
         regionName = row.location;
       }
       
-      // Agregar o actualizar los datos de la región
-      if (!regionData[regionName]) {
-        regionData[regionName] = {
+      return {
+        region: regionName,
+        count: parseInt(row.count),
+        avgScore: parseFloat(row.avg_score)
+      };
+    });
+    
+    // Esperamos a que todas las promesas se resuelvan
+    const regionResults = await Promise.all(regionDataPromises);
+    
+    // Agrupamos por región para sumar los conteos
+    const regionData = {};
+    regionResults.forEach(item => {
+      if (!regionData[item.region]) {
+        regionData[item.region] = {
           count: 0,
           totalScore: 0
         };
       }
       
-      regionData[regionName].count += parseInt(row.count);
-      regionData[regionName].totalScore += parseFloat(row.count) * parseFloat(row.avg_score);
+      regionData[item.region].count += item.count;
+      regionData[item.region].totalScore += item.count * item.avgScore;
     });
     
     // Convertir los datos acumulados a formato para la respuesta
@@ -360,12 +320,6 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
     
     // Ordenar por conteo (de mayor a menor)
     formattedData.sort((a, b) => b.count - a.count);
-    
-    // Opcional: Registrar datos para depuración
-    console.log('Regiones procesadas:', formattedData.length);
-    formattedData.slice(0, 5).forEach(item => {
-      console.log(`${item.region}: ${item.count} mensajes, score promedio: ${item.avgScore}`);
-    });
     
     await connection.end();
     
@@ -435,7 +389,7 @@ app.get('/api/stats/general', async (req, res) => {
       SELECT AVG(detection_score) AS avg_score FROM messages
     `);
     
-    // Consulta mejorada para obtener la ubicación real del punto con más ocurrencias
+    // Consulta para obtener la ubicación con más ocurrencias
     const [topLocationData] = await connection.execute(`
       SELECT 
         location,
@@ -451,60 +405,18 @@ app.get('/api/stats/general', async (req, res) => {
       LIMIT 1
     `);
     
-    // Extraer la región real basada en las coordenadas
+    // Extraer la región real basada en las coordenadas usando el nuevo servicio
     let topRegion = 'No disponible';
     
     if (topLocationData[0]) {
-      // Si tenemos un resultado, intentamos determinar la ciudad a partir de las coordenadas
       const locationStr = topLocationData[0].location;
       
-      // Intentar extraer las coordenadas si es un par de lat,lng
+      // Intentar obtener el nombre de la ciudad usando el nuevo servicio
       if (locationStr.includes(',')) {
-        const [lat, lng] = locationStr.split(',').map(coord => parseFloat(coord.trim()));
-        
-        // Esta función podría usar un servicio de geocodificación inversa en una implementación completa
-        // Por ahora usamos una aproximación basada en coordenadas conocidas de ciudades colombianas
-        
-        // Definir rangos de coordenadas para las principales ciudades
-        const cityCoordinates = [
-          { name: 'Bogotá', lat: 4.6, lng: -74.1, radius: 0.3 },
-          { name: 'Medellín', lat: 6.2, lng: -75.6, radius: 0.3 },
-          { name: 'Cali', lat: 3.4, lng: -76.5, radius: 0.3 },
-          { name: 'Barranquilla', lat: 11.0, lng: -74.8, radius: 0.3 },
-          { name: 'Cartagena', lat: 10.4, lng: -75.5, radius: 0.3 },
-          { name: 'Bucaramanga', lat: 7.1, lng: -73.1, radius: 0.3 },
-          { name: 'Pereira', lat: 4.8, lng: -75.7, radius: 0.3 },
-          { name: 'Santa Marta', lat: 11.2, lng: -74.2, radius: 0.3 },
-          { name: 'Manizales', lat: 5.1, lng: -75.5, radius: 0.3 },
-          { name: 'Villavicencio', lat: 4.1, lng: -73.6, radius: 0.3 },
-          { name: 'Pasto', lat: 1.2, lng: -77.3, radius: 0.3 },
-          { name: 'Montería', lat: 8.8, lng: -75.9, radius: 0.3 }
-        ];
-        
-        // Función simple para calcular la distancia entre dos puntos (aproximación)
-        const calculateDistance = (lat1, lng1, lat2, lng2) => {
-          return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2));
-        };
-        
-        // Buscar la ciudad más cercana
-        let closestCity = null;
-        let minDistance = Number.MAX_VALUE;
-        
-        cityCoordinates.forEach(city => {
-          const distance = calculateDistance(lat, lng, city.lat, city.lng);
-          if (distance < minDistance && distance <= city.radius) {
-            minDistance = distance;
-            closestCity = city;
-          }
-        });
-        
-        // Si encontramos una ciudad cercana, la usamos
-        if (closestCity) {
-          topRegion = closestCity.name;
-        } else {
-          // En caso de que las coordenadas no coincidan con ninguna ciudad conocida
-          // Devolvemos las coordenadas exactas formateadas
-          topRegion = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        try {
+          topRegion = await locationService.getCityFromLocationString(locationStr);
+        } catch (error) {
+          console.error('Error al resolver principal ubicación:', error);
         }
       } else {
         // Si no es un formato de coordenadas, usamos el texto como está
@@ -526,6 +438,35 @@ app.get('/api/stats/general', async (req, res) => {
   } catch (error) {
     console.error('Error al obtener estadísticas generales:', error);
     res.status(500).json({ error: 'Error al obtener estadísticas generales' });
+  }
+});
+
+// Endpoint para convertir coordenadas a nombres de ciudades
+app.get('/api/location-name', async (req, res) => {
+  try {
+    const { lat, lng } = req.query;
+    
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'Se requieren latitud y longitud' });
+    }
+    
+    // Validar que sean números válidos
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    
+    if (isNaN(latitude) || isNaN(longitude) || 
+        latitude < -90 || latitude > 90 || 
+        longitude < -180 || longitude > 180) {
+      return res.status(400).json({ error: 'Coordenadas inválidas' });
+    }
+    
+    // Obtener el nombre de la ciudad usando el nuevo servicio
+    const cityName = await locationService.getCityName(latitude, longitude);
+    
+    res.json({ cityName });
+  } catch (error) {
+    console.error('Error al obtener nombre de ubicación:', error);
+    res.status(500).json({ error: 'Error al procesar la solicitud' });
   }
 });
 
