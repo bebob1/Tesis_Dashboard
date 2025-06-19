@@ -470,6 +470,61 @@ app.get('/api/location-name', async (req, res) => {
   }
 });
 
+// API para obtener los mensajes más repetidos
+app.get('/api/stats/repeated-messages', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Consulta para obtener mensajes agrupados por contenido similar
+    // Limitamos a mensajes que aparecen al menos 2 veces y tomamos los top 10
+    const [rows] = await connection.execute(`
+      SELECT 
+        message_body,
+        COUNT(*) AS repetitions,
+        AVG(detection_score) AS avg_score,
+        MAX(received_at) AS last_received
+      FROM 
+        messages
+      WHERE 
+        message_body IS NOT NULL 
+        AND message_body != ''
+        AND CHAR_LENGTH(message_body) >= 10  -- Evitar mensajes muy cortos que no sean significativos
+      GROUP BY 
+        message_body
+      HAVING 
+        repetitions >= 2  -- Solo mensajes que se repiten al menos 2 veces
+      ORDER BY 
+        repetitions DESC, avg_score DESC
+      LIMIT 15  -- Top 15 mensajes más repetidos
+    `);
+    
+    await connection.end();
+    
+    // Formatear los datos para el frontend
+    const formattedData = rows.map(row => {
+      // Resumir el mensaje si es muy largo (máximo 80 caracteres)
+      let summarizedMessage = row.message_body;
+      if (summarizedMessage.length > 80) {
+        summarizedMessage = summarizedMessage.substring(0, 80) + '...';
+      }
+      
+      return {
+        message: summarizedMessage,
+        fullMessage: row.message_body, // Mensaje completo para tooltips
+        repetitions: row.repetitions,
+        avgScore: parseFloat(row.avg_score).toFixed(2),
+        lastReceived: row.last_received
+      };
+    });
+    
+    console.log(`Enviando ${formattedData.length} mensajes repetidos`);
+    res.json(formattedData);
+  } catch (error) {
+    console.error('Error al obtener mensajes repetidos:', error);
+    res.status(500).json({ error: 'Error al obtener mensajes repetidos' });
+  }
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en http://localhost:${port}`);

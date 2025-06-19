@@ -3,6 +3,7 @@ let timeChart = null;
 let senderChart = null;
 let regionChart = null;
 let scoreChart = null;
+let repeatedMessagesChart = null; // Nueva variable para el gráfico de mensajes repetidos
 
 // Variable para controlar el estado del panel
 let isStatsPanelOpen = false;
@@ -74,13 +75,47 @@ async function loadAllStatsData() {
     
     try {
         // Cargar datos para todos los gráficos en paralelo para mejorar rendimiento
-        const [timeResponse, senderResponse, regionResponse, scoreResponse, generalResponse] = await Promise.all([
+        const [timeResponse, senderResponse, regionResponse, scoreResponse, generalResponse, repeatedResponse] = await Promise.all([
             fetch('/api/stats/messages-by-time'),
             fetch('/api/stats/messages-by-sender'),
             fetch('/api/stats/messages-by-region'),
             fetch('/api/stats/score-distribution'),
-            fetch('/api/stats/general')
+            fetch('/api/stats/general'),
+            fetch('/api/stats/repeated-messages') // Nueva API para mensajes repetidos
         ]);
+        
+        // Procesar datos de mensajes repetidos
+        if (repeatedResponse.ok) {
+            const data = await repeatedResponse.json();
+            const repeatedData = {
+                labels: data.map(item => item.message),
+                datasets: [{
+                    label: 'Repeticiones',
+                    data: data.map(item => item.repetitions),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(201, 203, 207, 0.7)',
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(153, 102, 255, 0.5)',
+                        'rgba(255, 159, 64, 0.5)',
+                        'rgba(201, 203, 207, 0.5)',
+                        'rgba(255, 99, 132, 0.3)'
+                    ],
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                    borderWidth: 1
+                }],
+                fullMessages: data.map(item => item.fullMessage) // Guardar mensajes completos para tooltips
+            };
+            renderRepeatedMessagesChart(repeatedData);
+        }
         
         // Procesar datos de tiempo
         if (timeResponse.ok) {
@@ -193,6 +228,64 @@ async function loadAllStatsData() {
 function showStatsLoading(show) {
     document.getElementById('stats-loading').style.display = show ? 'flex' : 'none';
     document.getElementById('stats-content').style.display = show ? 'none' : 'block';
+}
+
+/**
+ * Función para renderizar el gráfico de mensajes repetidos
+ * @param {Object} data - Datos para el gráfico
+ */
+function renderRepeatedMessagesChart(data) {
+    const ctx = document.getElementById('repeatedMessagesChart').getContext('2d');
+    
+    // Destruir el gráfico anterior si existe
+    if (repeatedMessagesChart) {
+        repeatedMessagesChart.destroy();
+    }
+    
+    repeatedMessagesChart = new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y', // Barras horizontales para mejor legibilidad de los mensajes
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Número de repeticiones'
+                    }
+                },
+                y: {
+                    ticks: {
+                        callback: function(value, index, values) {
+                            // Limitar la longitud del texto en el eje Y
+                            const label = this.getLabelForValue(value);
+                            return label.length > 30 ? label.substring(0, 30) + '...' : label;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false // No mostrar leyenda para este gráfico
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            // Mostrar el mensaje completo en el tooltip
+                            const index = context[0].dataIndex;
+                            return data.fullMessages[index];
+                        },
+                        label: function(context) {
+                            return `Repeticiones: ${context.parsed.x}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 /**
