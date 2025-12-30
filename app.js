@@ -30,14 +30,28 @@ app.get('/', (req, res) => {
 
 // API para obtener los datos de mensajes fraudulentos para el mapa de calor
 app.get('/api/fraud-messages', async (req, res) => {
+  let connection;
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    console.log('=== [/api/fraud-messages] Iniciando solicitud ===');
+    console.log('[CONEXIÓN] Intentando conectar a la base de datos...');
+    console.log('[CONEXIÓN] Config:', {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      password: dbConfig.password ? '***configurada***' : '***VACÍA***'
+    });
+
+    connection = await mysql.createConnection(dbConfig);
+    console.log('[CONEXIÓN] ✓ Conexión establecida exitosamente');
 
     // Comprobamos primero cuántos mensajes existen en total
-    const [totalCount] = await connection.execute(`
-      SELECT COUNT(*) as total FROM messages WHERE location IS NOT NULL AND location != ''
-    `);
-    console.log(`Total de mensajes en la base de datos: ${totalCount[0].total}`);
+    console.log('[CONSULTA 1] Ejecutando COUNT de mensajes...');
+    const countQuery = `SELECT COUNT(*) as total FROM messages WHERE location IS NOT NULL AND location != ''`;
+    console.log('[CONSULTA 1] SQL:', countQuery);
+
+    const [totalCount] = await connection.execute(countQuery);
+    console.log(`[CONSULTA 1] ✓ Total de mensajes en la base de datos: ${totalCount[0].total}`);
 
     // Consulta modificada para obtener TODOS los mensajes sin agrupar
     // Así obtendremos cada punto individual
@@ -58,6 +72,7 @@ app.get('/api/fraud-messages', async (req, res) => {
 
     // Ahora, preparamos los datos para el mapa de calor
     // Primero agrupamos manualmente por ubicación para calcular el conteo
+    console.log('[PROCESAMIENTO] Agrupando datos por ubicación...');
     const locationCounts = {};
 
     // Procesamos cada mensaje y contamos las ocurrencias por ubicación
@@ -81,7 +96,7 @@ app.get('/api/fraud-messages', async (req, res) => {
       if (isNaN(lat) || isNaN(lng) ||
         lat < -90 || lat > 90 ||
         lng < -180 || lng > 180) {
-        console.warn(`Omitiendo coordenadas inválidas: ${location}`);
+        console.warn(`[TRANSFORMACIÓN] ⚠ Omitiendo coordenadas inválidas: ${location}`);
         return null;
       }
 
@@ -106,8 +121,29 @@ app.get('/api/fraud-messages', async (req, res) => {
 
     res.json(heatmapData);
   } catch (error) {
-    console.error('Error al obtener datos:', error);
-    res.status(500).json({ error: 'Error al obtener los datos de mensajes fraudulentos' });
+    console.error('=== [/api/fraud-messages] ✗✗✗ ERROR ✗✗✗ ===');
+    console.error('[ERROR] Tipo:', error.constructor.name);
+    console.error('[ERROR] Mensaje:', error.message);
+    console.error('[ERROR] Código:', error.code);
+    console.error('[ERROR] SQL State:', error.sqlState);
+    console.error('[ERROR] SQL Message:', error.sqlMessage);
+    console.error('[ERROR] Stack completo:', error.stack);
+    console.error('=== Fin del error ===\n');
+
+    if (connection) {
+      try {
+        await connection.end();
+        console.log('[CONEXIÓN] Conexión cerrada después del error');
+      } catch (closeError) {
+        console.error('[CONEXIÓN] Error al cerrar conexión:', closeError.message);
+      }
+    }
+
+    res.status(500).json({
+      error: 'Error al obtener los datos de mensajes fraudulentos',
+      details: error.message,
+      code: error.code
+    });
   }
 });
 
