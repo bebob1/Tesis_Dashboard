@@ -14,6 +14,7 @@ const port = process.env.PORT || 3000;
 // Configuración de conexión a la base de datos
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'dashboard'
@@ -31,13 +32,13 @@ app.get('/', (req, res) => {
 app.get('/api/fraud-messages', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-   
+
     // Comprobamos primero cuántos mensajes existen en total
     const [totalCount] = await connection.execute(`
       SELECT COUNT(*) as total FROM messages WHERE location IS NOT NULL AND location != ''
     `);
     console.log(`Total de mensajes en la base de datos: ${totalCount[0].total}`);
-    
+
     // Consulta modificada para obtener TODOS los mensajes sin agrupar
     // Así obtendremos cada punto individual
     const [rows] = await connection.execute(`
@@ -52,13 +53,13 @@ app.get('/api/fraud-messages', async (req, res) => {
       ORDER BY
         id DESC
     `);
-   
+
     console.log(`Recuperados ${rows.length} registros sin agrupar`);
-    
+
     // Ahora, preparamos los datos para el mapa de calor
     // Primero agrupamos manualmente por ubicación para calcular el conteo
     const locationCounts = {};
-    
+
     // Procesamos cada mensaje y contamos las ocurrencias por ubicación
     rows.forEach(row => {
       if (row.location && row.location.includes(',')) {
@@ -71,19 +72,19 @@ app.get('/api/fraud-messages', async (req, res) => {
         locationCounts[row.location].count += 1;
       }
     });
-    
+
     // Transformamos los datos para el mapa de calor
     const heatmapData = Object.entries(locationCounts).map(([location, data]) => {
       const [lat, lng] = location.split(',').map(coord => parseFloat(coord.trim()));
-      
+
       // Validamos que las coordenadas sean números válidos
-      if (isNaN(lat) || isNaN(lng) || 
-          lat < -90 || lat > 90 || 
-          lng < -180 || lng > 180) {
+      if (isNaN(lat) || isNaN(lng) ||
+        lat < -90 || lat > 90 ||
+        lng < -180 || lng > 180) {
         console.warn(`Omitiendo coordenadas inválidas: ${location}`);
         return null;
       }
-      
+
       return {
         lat: lat,
         lng: lng,
@@ -92,17 +93,17 @@ app.get('/api/fraud-messages', async (req, res) => {
         score: data.score
       };
     }).filter(item => item !== null);
-    
+
     await connection.end();
-    
+
     console.log(`Enviando ${heatmapData.length} puntos de datos para el mapa de calor`);
-    console.log('Distribución de conteos:', 
+    console.log('Distribución de conteos:',
       heatmapData.reduce((acc, point) => {
         acc.total += point.count;
         return acc;
-      }, {total: 0})
+      }, { total: 0 })
     );
-    
+
     res.json(heatmapData);
   } catch (error) {
     console.error('Error al obtener datos:', error);
@@ -114,7 +115,7 @@ app.get('/api/fraud-messages', async (req, res) => {
 app.get('/api/recent-messages', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-   
+
     // Consulta para obtener los 5 mensajes más recientes sin filtrar por puntaje
     const [rows] = await connection.execute(`
       SELECT
@@ -131,7 +132,7 @@ app.get('/api/recent-messages', async (req, res) => {
         received_at DESC
       LIMIT 5
     `);
-    
+
     // Enriquecer cada mensaje con el nombre de la ciudad utilizando el nuevo servicio
     const enrichedRows = await Promise.all(rows.map(async (row) => {
       if (row.location && row.location.includes(',')) {
@@ -145,9 +146,9 @@ app.get('/api/recent-messages', async (req, res) => {
       }
       return { ...row, city: 'Desconocido' };
     }));
-   
+
     await connection.end();
-   
+
     res.json(enrichedRows);
   } catch (error) {
     console.error('Error al obtener mensajes recientes:', error);
@@ -159,13 +160,13 @@ app.get('/api/recent-messages', async (req, res) => {
 app.get('/api/total-count', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     const [rows] = await connection.execute(`
       SELECT COUNT(*) as total FROM messages WHERE location IS NOT NULL AND location != ''
     `);
-    
+
     await connection.end();
-    
+
     res.json({ total: rows[0].total });
   } catch (error) {
     console.error('Error al obtener el conteo total:', error);
@@ -177,7 +178,7 @@ app.get('/api/total-count', async (req, res) => {
 app.get('/api/stats/messages-by-time', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     // Consulta para obtener el conteo de mensajes por mes en los últimos 6 meses
     const [rows] = await connection.execute(`
       SELECT 
@@ -193,16 +194,16 @@ app.get('/api/stats/messages-by-time', async (req, res) => {
       ORDER BY 
         month ASC
     `);
-    
+
     await connection.end();
-    
+
     // Dar formato a los datos para el gráfico
     const formattedData = rows.map(row => ({
       month: row.month,
       count: row.count,
       avgScore: parseFloat(row.avg_score).toFixed(2)
     }));
-    
+
     res.json(formattedData);
   } catch (error) {
     console.error('Error al obtener estadísticas por tiempo:', error);
@@ -214,7 +215,7 @@ app.get('/api/stats/messages-by-time', async (req, res) => {
 app.get('/api/stats/messages-by-sender', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     // Consulta para obtener los 10 remitentes con más mensajes
     const [rows] = await connection.execute(`
       SELECT 
@@ -235,16 +236,16 @@ app.get('/api/stats/messages-by-sender', async (req, res) => {
         count DESC
       LIMIT 10
     `);
-    
+
     await connection.end();
-    
+
     // Dar formato a los datos para el gráfico
     const formattedData = rows.map(row => ({
       sender: row.sender,
       count: row.count,
       avgScore: parseFloat(row.avg_score).toFixed(2)
     }));
-    
+
     res.json(formattedData);
   } catch (error) {
     console.error('Error al obtener estadísticas por remitente:', error);
@@ -256,7 +257,7 @@ app.get('/api/stats/messages-by-sender', async (req, res) => {
 app.get('/api/stats/messages-by-region', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     // Obtenemos los datos de la base de datos
     const [rows] = await connection.execute(`
       SELECT 
@@ -270,11 +271,11 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
       GROUP BY
         location
     `);
-    
+
     // Procesamos cada ubicación utilizando el nuevo servicio de ubicaciones
     const regionDataPromises = rows.map(async (row) => {
       let regionName = 'Otra ubicación';
-      
+
       if (row.location && row.location.includes(',')) {
         try {
           // Usar el nuevo servicio para obtener el nombre de la ciudad
@@ -286,17 +287,17 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
         // Si no es un formato de coordenadas, usamos el texto como está
         regionName = row.location;
       }
-      
+
       return {
         region: regionName,
         count: parseInt(row.count),
         avgScore: parseFloat(row.avg_score)
       };
     });
-    
+
     // Esperamos a que todas las promesas se resuelvan
     const regionResults = await Promise.all(regionDataPromises);
-    
+
     // Agrupamos por región para sumar los conteos
     const regionData = {};
     regionResults.forEach(item => {
@@ -306,23 +307,23 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
           totalScore: 0
         };
       }
-      
+
       regionData[item.region].count += item.count;
       regionData[item.region].totalScore += item.count * item.avgScore;
     });
-    
+
     // Convertir los datos acumulados a formato para la respuesta
     const formattedData = Object.entries(regionData).map(([region, data]) => ({
       region: region,
       count: data.count,
       avgScore: (data.totalScore / data.count).toFixed(2)
     }));
-    
+
     // Ordenar por conteo (de mayor a menor)
     formattedData.sort((a, b) => b.count - a.count);
-    
+
     await connection.end();
-    
+
     res.json(formattedData);
   } catch (error) {
     console.error('Error al obtener estadísticas por región:', error);
@@ -334,7 +335,7 @@ app.get('/api/stats/messages-by-region', async (req, res) => {
 app.get('/api/stats/score-distribution', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     // Consulta para obtener la distribución de puntajes en rangos
     const [rows] = await connection.execute(`
       SELECT 
@@ -354,15 +355,15 @@ app.get('/api/stats/score-distribution', async (req, res) => {
       ORDER BY 
         MIN(detection_score)
     `);
-    
+
     await connection.end();
-    
+
     // Dar formato a los datos para el gráfico
     const formattedData = rows.map(row => ({
       scoreRange: row.score_range,
       count: row.count
     }));
-    
+
     res.json(formattedData);
   } catch (error) {
     console.error('Error al obtener distribución de puntajes:', error);
@@ -374,21 +375,21 @@ app.get('/api/stats/score-distribution', async (req, res) => {
 app.get('/api/stats/general', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     // Consulta para obtener estadísticas generales
     const [totalCount] = await connection.execute(`
       SELECT COUNT(*) AS total FROM messages
     `);
-    
+
     const [lastWeekCount] = await connection.execute(`
       SELECT COUNT(*) AS count FROM messages 
       WHERE received_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
     `);
-    
+
     const [avgScore] = await connection.execute(`
       SELECT AVG(detection_score) AS avg_score FROM messages
     `);
-    
+
     // Consulta para obtener la ubicación con más ocurrencias
     const [topLocationData] = await connection.execute(`
       SELECT 
@@ -404,13 +405,13 @@ app.get('/api/stats/general', async (req, res) => {
         count DESC
       LIMIT 1
     `);
-    
+
     // Extraer la región real basada en las coordenadas usando el nuevo servicio
     let topRegion = 'No disponible';
-    
+
     if (topLocationData[0]) {
       const locationStr = topLocationData[0].location;
-      
+
       // Intentar obtener el nombre de la ciudad usando el nuevo servicio
       if (locationStr.includes(',')) {
         try {
@@ -423,9 +424,9 @@ app.get('/api/stats/general', async (req, res) => {
         topRegion = locationStr;
       }
     }
-    
+
     await connection.end();
-    
+
     // Compilar resultados en un objeto
     const stats = {
       totalMessages: totalCount[0].total,
@@ -433,7 +434,7 @@ app.get('/api/stats/general', async (req, res) => {
       averageScore: parseFloat(avgScore[0].avg_score).toFixed(2),
       topRegion: topRegion
     };
-    
+
     res.json(stats);
   } catch (error) {
     console.error('Error al obtener estadísticas generales:', error);
@@ -445,24 +446,24 @@ app.get('/api/stats/general', async (req, res) => {
 app.get('/api/location-name', async (req, res) => {
   try {
     const { lat, lng } = req.query;
-    
+
     if (!lat || !lng) {
       return res.status(400).json({ error: 'Se requieren latitud y longitud' });
     }
-    
+
     // Validar que sean números válidos
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
-    
-    if (isNaN(latitude) || isNaN(longitude) || 
-        latitude < -90 || latitude > 90 || 
-        longitude < -180 || longitude > 180) {
+
+    if (isNaN(latitude) || isNaN(longitude) ||
+      latitude < -90 || latitude > 90 ||
+      longitude < -180 || longitude > 180) {
       return res.status(400).json({ error: 'Coordenadas inválidas' });
     }
-    
+
     // Obtener el nombre de la ciudad usando el nuevo servicio
     const cityName = await locationService.getCityName(latitude, longitude);
-    
+
     res.json({ cityName });
   } catch (error) {
     console.error('Error al obtener nombre de ubicación:', error);
@@ -474,7 +475,7 @@ app.get('/api/location-name', async (req, res) => {
 app.get('/api/stats/repeated-messages', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     // Consulta para obtener mensajes agrupados por contenido similar
     // Limitamos a mensajes que aparecen al menos 2 veces y tomamos los top 10
     const [rows] = await connection.execute(`
@@ -497,9 +498,9 @@ app.get('/api/stats/repeated-messages', async (req, res) => {
         repetitions DESC, avg_score DESC
       LIMIT 15  -- Top 15 mensajes más repetidos
     `);
-    
+
     await connection.end();
-    
+
     // Formatear los datos para el frontend
     const formattedData = rows.map(row => {
       // Resumir el mensaje si es muy largo (máximo 80 caracteres)
@@ -507,7 +508,7 @@ app.get('/api/stats/repeated-messages', async (req, res) => {
       if (summarizedMessage.length > 80) {
         summarizedMessage = summarizedMessage.substring(0, 80) + '...';
       }
-      
+
       return {
         message: summarizedMessage,
         fullMessage: row.message_body, // Mensaje completo para tooltips
@@ -516,7 +517,7 @@ app.get('/api/stats/repeated-messages', async (req, res) => {
         lastReceived: row.last_received
       };
     });
-    
+
     console.log(`Enviando ${formattedData.length} mensajes repetidos`);
     res.json(formattedData);
   } catch (error) {
@@ -525,7 +526,51 @@ app.get('/api/stats/repeated-messages', async (req, res) => {
   }
 });
 
+// Test database connection on startup
+async function testDatabaseConnection() {
+  try {
+    console.log('Probando conexión a la base de datos...');
+    console.log(`Host: ${dbConfig.host}, Database: ${dbConfig.database}, User: ${dbConfig.user}`);
+
+    const connection = await mysql.createConnection(dbConfig);
+    console.log('✓ Conexión a la base de datos exitosa');
+
+    // Check if messages table exists and has data
+    const [tables] = await connection.execute("SHOW TABLES LIKE 'messages'");
+    if (tables.length === 0) {
+      console.warn('⚠ Advertencia: La tabla "messages" no existe');
+      console.warn('⚠ Ejecuta el script SQL para crear las tablas e importar datos');
+    } else {
+      const [count] = await connection.execute('SELECT COUNT(*) as total FROM messages');
+      console.log(`✓ Tabla "messages" encontrada con ${count[0].total} registros`);
+
+      if (count[0].total === 0) {
+        console.warn('⚠ Advertencia: La tabla "messages" está vacía');
+        console.warn('⚠ Importa los datos usando: mysql -u [user] -p [database] < insert_mensajes_fraudulentos.sql');
+      }
+    }
+
+    await connection.end();
+  } catch (error) {
+    console.error('✗ Error al conectar a la base de datos:', error.message);
+    console.error('');
+    console.error('Verifica lo siguiente:');
+    console.error('1. MySQL/MariaDB está instalado y ejecutándose');
+    console.error('2. Las credenciales en el archivo .env son correctas');
+    console.error('3. La base de datos existe: CREATE DATABASE IF NOT EXISTS dashboard;');
+    console.error('4. El usuario tiene permisos para acceder a la base de datos');
+    console.error('');
+    console.error('Configuración actual:');
+    console.error(`   Host: ${dbConfig.host}`);
+    console.error(`   User: ${dbConfig.user}`);
+    console.error(`   Database: ${dbConfig.database}`);
+    console.error('');
+    process.exit(1);
+  }
+}
+
 // Iniciar el servidor
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Servidor ejecutándose en http://localhost:${port}`);
+  await testDatabaseConnection();
 });
