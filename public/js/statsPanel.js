@@ -11,6 +11,38 @@ let isStatsPanelOpen = false;
 // Caché de coordenadas a nombres de ciudades (para evitar solicitudes repetidas)
 const locationCache = {};
 
+// ── Chart.js — Defaults globales para tema oscuro ─────────────────────────
+// Se aplica a TODOS los gráficos automáticamente
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart !== 'undefined') {
+        // Color base de texto — blanco suave
+        Chart.defaults.color = '#e2e8f0';
+
+        // Líneas de cuadrícula sutiles
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.06)';
+
+        // Fuente global
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+        Chart.defaults.font.size   = 11;
+
+        // Plugins globales
+        Chart.defaults.plugins.legend.labels.color     = '#e2e8f0';
+        Chart.defaults.plugins.legend.labels.padding   = 14;
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(17, 24, 39, 0.95)';
+        Chart.defaults.plugins.tooltip.titleColor      = '#f1f5f9';
+        Chart.defaults.plugins.tooltip.bodyColor       = '#94a3b8';
+        Chart.defaults.plugins.tooltip.borderColor     = 'rgba(59, 130, 246, 0.3)';
+        Chart.defaults.plugins.tooltip.borderWidth     = 1;
+        Chart.defaults.plugins.tooltip.padding         = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius    = 6;
+
+        // Escalas (ejes)
+        Chart.defaults.scale.ticks.color    = '#94a3b8';
+        Chart.defaults.scale.grid.color     = 'rgba(255, 255, 255, 0.06)';
+        Chart.defaults.scale.title.color    = '#94a3b8';
+    }
+});
+
 /**
  * Función para formatear mes-año
  * @param {string} dateString - Fecha en formato 'YYYY-MM'

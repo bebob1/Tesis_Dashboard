@@ -12,7 +12,8 @@
   background: var(--bg-surface, #111827);
   border-left: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.35s;
   overflow-y: auto;
   z-index: 1000;
   scrollbar-width: thin;
@@ -30,10 +31,17 @@
 
 .stats-panel.closed {
   transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .stats-panel.open {
   transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+  /* visibility debe aparecer de inmediato al abrir */
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0s;
 }
 
 /* ── Encabezado del panel ─────────────────────────────── */
