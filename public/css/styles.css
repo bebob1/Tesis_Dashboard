@@ -5,33 +5,33 @@
 
 :root {
   /* Paleta principal — dark profesional */
-  --bg-base:        #0b0f1a;
-  --bg-surface:     #111827;
-  --bg-elevated:    #1a2236;
-  --bg-card:        #1f2d45;
+  --bg-base: #0b0f1a;
+  --bg-surface: #111827;
+  --bg-elevated: #1a2236;
+  --bg-card: #1f2d45;
 
   /* Acento — azul analítico */
-  --accent-primary:  #3b82f6;
-  --accent-hover:    #2563eb;
-  --accent-glow:     rgba(59, 130, 246, 0.18);
+  --accent-primary: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-glow: rgba(59, 130, 246, 0.18);
 
   /* Peligro / Score alto */
-  --danger:          #ef4444;
-  --danger-soft:     rgba(239, 68, 68, 0.15);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.15);
 
   /* Texto */
-  --text-primary:   #f1f5f9;
+  --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-muted:     #64748b;
+  --text-muted: #64748b;
 
   /* Bordes */
-  --border:         rgba(255, 255, 255, 0.06);
-  --border-accent:  rgba(59, 130, 246, 0.35);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(59, 130, 246, 0.35);
 
   /* Sombras */
-  --shadow-sm:   0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:   0 4px 16px rgba(0,0,0,0.45);
-  --shadow-lg:   0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
 
   /* Tipografía */
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -41,15 +41,24 @@
 }
 
 /* ── Reset ─────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-html, body {
+html,
+body {
   height: 100%;
   width: 100%;
   font-family: var(--font-sans);
   background: var(--bg-base);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* evita scroll horizontal por el panel oculto */
 }
 
 /* ============================================================
@@ -66,13 +75,15 @@ html, body {
   justify-content: center;
   z-index: 100;
   /* línea luminosa inferior */
-  box-shadow: 0 1px 0 var(--border), 0 2px 20px rgba(0,0,0,0.5);
+  box-shadow: 0 1px 0 var(--border), 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
 #header::before {
   content: '';
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
   opacity: 0.55;
@@ -100,8 +111,17 @@ html, body {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.75); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.75);
+  }
 }
 
 /* ============================================================
@@ -110,6 +130,9 @@ html, body {
 .container {
   display: flex;
   height: calc(100vh - 58px);
+  overflow: hidden;
+  /* evita que el panel fuera del viewport genere scroll */
+  position: relative;
 }
 
 /* ── Mapa ─────────────────────────────────────────────── */
@@ -123,13 +146,16 @@ html, body {
 
 /* Leaflet attribution pill */
 .leaflet-control-attribution {
-  background: rgba(11,15,26,0.75) !important;
+  background: rgba(11, 15, 26, 0.75) !important;
   color: var(--text-muted) !important;
   font-size: 10px !important;
   border-radius: 4px !important;
   backdrop-filter: blur(4px);
 }
-.leaflet-control-attribution a { color: var(--accent-primary) !important; }
+
+.leaflet-control-attribution a {
+  color: var(--accent-primary) !important;
+}
 
 /* Leaflet zoom buttons */
 .leaflet-control-zoom a {
@@ -138,7 +164,10 @@ html, body {
   border-color: var(--border) !important;
   transition: background var(--ease) !important;
 }
-.leaflet-control-zoom a:hover { background: var(--bg-card) !important; }
+
+.leaflet-control-zoom a:hover {
+  background: var(--bg-card) !important;
+}
 
 /* ── Sidebar ──────────────────────────────────────────── */
 .sidebar {
@@ -156,25 +185,32 @@ html, body {
   scrollbar-color: var(--border) transparent;
 }
 
-.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
 .sidebar::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
 }
 
 /* ── Sección genérica ─────────────────────────────────── */
-.stats-box, .legend {
+.stats-box,
+.legend {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px;
   transition: border-color var(--ease);
 }
-.stats-box:hover, .legend:hover {
+
+.stats-box:hover,
+.legend:hover {
   border-color: var(--border-accent);
 }
 
-.stats-box h3, .legend h3 {
+.stats-box h3,
+.legend h3 {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -189,7 +225,8 @@ html, body {
 .stats-box h3::before {
   content: '';
   display: inline-block;
-  width: 3px; height: 14px;
+  width: 3px;
+  height: 14px;
   background: var(--accent-primary);
   border-radius: 2px;
 }
@@ -197,7 +234,8 @@ html, body {
 .legend h3::before {
   content: '';
   display: inline-block;
-  width: 3px; height: 14px;
+  width: 3px;
+  height: 14px;
   background: var(--danger);
   border-radius: 2px;
 }
@@ -243,7 +281,7 @@ html, body {
 }
 
 #recent-messages-list li:hover {
-  background: rgba(59,130,246,0.06);
+  background: rgba(59, 130, 246, 0.06);
   border-left-color: var(--accent-hover);
 }
 
@@ -278,50 +316,84 @@ html, body {
   border-bottom: 1px solid var(--border);
   transition: color var(--ease);
 }
-.legend-item:last-child { border-bottom: none; }
-.legend-item:hover { color: var(--text-primary); }
+
+.legend-item:last-child {
+  border-bottom: none;
+}
+
+.legend-item:hover {
+  color: var(--text-primary);
+}
 
 .legend-color {
-  width: 18px; height: 18px;
+  width: 18px;
+  height: 18px;
   border-radius: 4px;
   flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
 }
 
 /* Colores leyenda */
-.legend-item:nth-child(1) .legend-color { background: rgba(239, 68, 68, 0.9); }
-.legend-item:nth-child(2) .legend-color { background: rgba(249, 115, 22, 0.9); }
-.legend-item:nth-child(3) .legend-color { background: rgba(234, 179, 8, 0.9); }
+.legend-item:nth-child(1) .legend-color {
+  background: rgba(239, 68, 68, 0.9);
+}
+
+.legend-item:nth-child(2) .legend-color {
+  background: rgba(249, 115, 22, 0.9);
+}
+
+.legend-item:nth-child(3) .legend-color {
+  background: rgba(234, 179, 8, 0.9);
+}
 
 /* ============================================================
    MARCADORES / CLUSTERS
    ============================================================ */
-.message-number-icon { background: transparent; border: none; }
+.message-number-icon {
+  background: transparent;
+  border: none;
+}
 
 .message-count {
   color: #fff;
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: 11px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.6);
   letter-spacing: 0.01em;
 }
 
 .marker-cluster-small,
 .marker-cluster-medium,
-.marker-cluster-large { background-color: transparent !important; }
+.marker-cluster-large {
+  background-color: transparent !important;
+}
 
 .marker-cluster-small div,
 .marker-cluster-medium div,
-.marker-cluster-large div { background-color: transparent !important; }
+.marker-cluster-large div {
+  background-color: transparent !important;
+}
 
-.marker-cluster span { display: none; }
+.marker-cluster span {
+  display: none;
+}
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
-  .container { flex-direction: column; }
-  #map        { height: 62%; }
-  .sidebar    { width: 100%; height: 38%; padding: 12px; }
+  .container {
+    flex-direction: column;
+  }
+
+  #map {
+    height: 62%;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: 38%;
+    padding: 12px;
+  }
 }
