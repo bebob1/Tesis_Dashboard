@@ -27,13 +27,24 @@
 </head>
 <body>
     <div id="header">
+        <div id="header-left">
+            <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Mostrar/ocultar sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
         <h1>Dashboard de Detección de Smishing — Colombia</h1>
+        <div id="header-right">
+            <a href="http://212.56.33.56:3001/" target="_blank" rel="noopener noreferrer" id="db-link-btn" class="db-link-btn">
+                <i class="fas fa-database"></i>
+                <span>Ver base de datos de mensajes</span>
+            </a>
+        </div>
     </div>
    
     <div class="container">
         <div id="map"></div>
        
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="stats-box">
                 <h3>Estadísticas</h3>
                 <div id="total-messages">Total de mensajes: Cargando...</div>
@@ -60,6 +71,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Overlay oscuro para cerrar el sidebar en móvil -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- Botón para abrir el panel de estadísticas -->
     <button id="stats-toggle-btn" class="stats-toggle-btn">
@@ -142,5 +156,36 @@
     
     <!-- Script para el panel de estadísticas -->
     <script src="js/statsPanel.js"></script>
+    <!-- Script inline: toggle sidebar responsive -->
+    <script>
+      (function () {
+        var toggleBtn = document.getElementById('sidebar-toggle-btn');
+        var sidebar   = document.getElementById('sidebar');
+        var overlay   = document.getElementById('sidebar-overlay');
+
+        function openSidebar() {
+          sidebar.classList.add('open');
+          overlay.classList.add('active');
+          toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('active');
+          toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        toggleBtn.addEventListener('click', function () {
+          sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+
+        // Cerrar al hacer resize a desktop
+        window.addEventListener('resize', function () {
+          if (window.innerWidth > 900) closeSidebar();
+        });
+      })();
+    </script>
 </body>
 </html>
