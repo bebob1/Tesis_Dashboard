@@ -4,7 +4,7 @@
 
 /* ── Panel principal ──────────────────────────────────── */
 .stats-panel {
-  position: absolute;
+  position: fixed;
   right: 0;
   top: 0;
   bottom: 0;
@@ -258,15 +258,16 @@
   position: fixed;
   right: 18px;
   top: 76px;
-  z-index: 999;
+  z-index: 1001;
   background: var(--bg-elevated, #1a2236);
   color: var(--text-primary, #f1f5f9);
   border: 1px solid var(--border-accent, rgba(59, 130, 246, 0.35));
   border-radius: 8px;
   padding: 9px 15px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  width: auto;
   gap: 8px;
   font-family: var(--font-sans, 'Inter', sans-serif);
   font-size: 0.78rem;

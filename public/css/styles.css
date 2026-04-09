@@ -445,7 +445,8 @@ body {
 
 /* ── Tablet (≤ 900px) ─────────────────────────────────── */
 @media (max-width: 900px) {
-  /* Sidebar pasa a drawer flotante */
+
+  /* Sidebar: drawer flotante desde la derecha */
   .sidebar {
     position: fixed;
     top: 58px;
@@ -464,26 +465,25 @@ body {
     transform: translateX(0);
   }
 
-  /* Botón hamburguesa visible */
+  /* Botón hamburguesa visible en tablet/móvil */
   .sidebar-toggle-btn {
     display: inline-flex;
   }
 
-  /* Overlay oscuro al abrir el sidebar */
+  /* Overlay oscuro (sin backdrop-filter para no crear stacking contexts) */
   .sidebar-overlay {
     display: none;
     position: fixed;
     inset: 58px 0 0 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 199;
-    backdrop-filter: blur(2px);
   }
 
   .sidebar-overlay.active {
     display: block;
   }
 
-  /* El mapa ocupa todo el espacio */
+  /* Mapa ocupa todo el espacio horizontal */
   .container {
     height: calc(100vh - 58px);
   }
@@ -493,21 +493,25 @@ body {
     height: 100%;
   }
 
-  /* Botón stats: reubicarlo en la parte inferior central sin tocar su transform */
+  /* Botón "Ver Estadísticas": centrado abajo */
   .stats-toggle-btn {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
     right: auto;
     top: auto;
-    margin-left: -70px;   /* mitad del ancho aprox para centrarlo */
-    transform: none;
-    z-index: 500;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  /* Panel de estadísticas: ancho completo en tablet */
+  .stats-panel {
+    width: min(480px, 100vw);
   }
 }
 
 /* ── Móvil (≤ 600px) ─────────────────────────────────── */
 @media (max-width: 600px) {
+
   #header {
     padding: 0 10px;
     height: 52px;
@@ -525,16 +529,19 @@ body {
     border-top: 1px solid var(--border-accent);
   }
 
-  /* Título reducido */
-  #header h1 {
-    font-size: 0.8rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
+  .sidebar-overlay {
+    inset: 52px 0 0 0;
   }
 
-  /* Botón DB: solo ícono en pantallas pequeñas */
+  /* Título reducido */
+  #header h1 {
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+
+  /* Botón DB: solo ícono */
   .db-link-btn span {
     display: none;
   }
@@ -543,24 +550,15 @@ body {
     padding: 7px 10px;
   }
 
-  /* Stats toggle en móvil: pequeño y fijo abajo */
+  /* Botón "Ver Estadísticas" en móvil */
   .stats-toggle-btn {
-    position: fixed;
     bottom: 18px;
-    left: 50%;
-    right: auto;
-    top: auto;
-    margin-left: -60px;
-    transform: none;
     font-size: 0.75rem;
     padding: 8px 14px;
-    z-index: 500;
   }
 
-  /* Panel de estadísticas ocupa toda la pantalla */
+  /* Panel de estadísticas: ancho total */
   .stats-panel {
-    width: 100% !important;
-    right: 0 !important;
-    border-radius: 0;
+    width: 100vw;
   }
 }
