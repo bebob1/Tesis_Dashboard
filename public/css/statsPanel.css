@@ -255,7 +255,7 @@
 
 /* ── Botón "Ver Estadísticas" ─────────────────────────── */
 .stats-toggle-btn {
-  position: absolute;
+  position: fixed;
   right: 18px;
   top: 76px;
   z-index: 999;
