@@ -566,15 +566,30 @@ function toggleStatsPanel() {
 
 // Inicializar eventos cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Configurar el botón de abrir/cerrar panel
+    // Configurar el botón de abrir/cerrar panel (desktop)
     const statsToggleBtn = document.getElementById('stats-toggle-btn');
-    const closeStatsBtn = document.getElementById('close-stats-btn');
-    
+    const closeStatsBtn  = document.getElementById('close-stats-btn');
+    // Botón dentro del sidebar (móvil)
+    const statsMobileBtn = document.getElementById('stats-toggle-mobile');
+
     if (statsToggleBtn) {
         statsToggleBtn.addEventListener('click', toggleStatsPanel);
     }
-    
+
     if (closeStatsBtn) {
         closeStatsBtn.addEventListener('click', toggleStatsPanel);
+    }
+
+    // Botón móvil: abre el panel de stats y cierra el sidebar
+    if (statsMobileBtn) {
+        statsMobileBtn.addEventListener('click', function () {
+            // Cerrar el sidebar antes de abrir el panel
+            const sidebar  = document.getElementById('sidebar');
+            const overlay  = document.getElementById('sidebar-overlay');
+            if (sidebar)  sidebar.classList.remove('open');
+            if (overlay)  overlay.classList.remove('active');
+
+            toggleStatsPanel();
+        });
     }
 });
