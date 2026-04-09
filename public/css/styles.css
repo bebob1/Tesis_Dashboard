@@ -503,7 +503,7 @@ body {
     display: none !important;
   }
 
-  /* Mostrar el botón dentro del sidebar */
+  /* Botón Ver Estadísticas dentro del sidebar */
   .stats-mobile-btn {
     display: flex;
     align-items: center;
@@ -533,11 +533,6 @@ body {
   .stats-mobile-btn:active {
     background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(59,130,246,0.12));
     border-color: var(--accent-primary);
-  }
-
-  /* Panel stats: ancho completo al abrirse en tablet */
-  .stats-panel {
-    width: min(480px, 100vw);
   }
 }
 

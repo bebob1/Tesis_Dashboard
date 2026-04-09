@@ -351,3 +351,91 @@
   font-size: 0.68rem;
   color: var(--text-muted, #64748b);
 }
+
+/* ============================================================
+   RESPONSIVE — Stats Panel
+   ============================================================ */
+@media (max-width: 900px) {
+  /* Panel ocupa todo el ancho usando left+right en lugar de width */
+  .stats-panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    border-left: none;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Panel: ancho completo sin desbordamiento */
+  .stats-panel {
+    left: 0;
+    right: 0;
+    width: auto;
+  }
+
+  /* Header del panel más compacto */
+  .stats-header {
+    padding: 0 14px;
+    height: 52px;
+  }
+
+  .stats-header h2 {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* Contenido con menos padding lateral */
+  .stats-content {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  /* Tarjetas en grid 2 columnas compacto */
+  .general-stats {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px 10px;
+    border-radius: 8px;
+  }
+
+  .stat-card h4 {
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 1.35rem;
+  }
+
+  .stat-card:last-child .stat-value {
+    font-size: 0.88rem;
+  }
+
+  /* Gráficos más pequeños en móvil */
+  .chart-container {
+    padding: 12px 12px 10px;
+    border-radius: 10px;
+  }
+
+  .chart-container h3 {
+    font-size: 0.65rem;
+    margin-bottom: 12px;
+  }
+
+  .chart-wrapper {
+    height: 220px;
+  }
+
+  /* Mensajes recientes más compactos */
+  .message-item {
+    padding: 8px 10px;
+  }
+
+  .message-body {
+    font-size: 0.75rem;
+  }
+}
